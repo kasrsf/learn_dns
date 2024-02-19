@@ -2,7 +2,9 @@ import argparse
 import socket
 
 from learn_dns import DNSPacket
+from learn_dns.consts import TYPE_A
 from learn_dns.dns import build_query
+from learn_dns.dns import send_query
 from learn_dns.utils import ip_to_string
 
 
@@ -27,6 +29,22 @@ def lookup_domain(domain_name):
     data, _ = sock.recvfrom(1024)
     response = DNSPacket.from_bytes(data)
     return ip_to_string(response.answers[0].data)
+
+
+def resolve(domain_name: str, record_type: int):
+    nameserver = "198.41.0.4"
+    while True:
+        print(f"Querying {nameserver} for {domain_name}")
+        response = send_query(nameserver, domain_name, record_type)
+        if ip := response.get_answer():
+            return ip
+        elif nsIP := response.get_nameserver_ip():
+            nameserver = nsIP
+        # look up the nameserver's IP address if there is one
+        elif ns_domain := response.get_nameserver():
+            nameserver = resolve(ns_domain, TYPE_A)
+        else:
+            raise Exception("something went wrong")
 
 
 def main():

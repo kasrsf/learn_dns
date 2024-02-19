@@ -53,7 +53,7 @@ def test_dns_record_from_bytes():
         type_=1,
         class_=1,
         ttl=21147,
-        data=b']\xb8\xd8"',
+        data="93.184.216.34",
     )
 
     reader = BytesIO(input)
@@ -81,7 +81,7 @@ def test_dns_packet_from_bytes():
                 type_=1,
                 class_=1,
                 ttl=21147,
-                data=b']\xb8\xd8"',
+                data="93.184.216.34",
             )
         ],
         authorities=[],

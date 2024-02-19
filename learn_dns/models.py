@@ -5,6 +5,10 @@ import dataclasses
 from io import BytesIO
 import struct
 
+from learn_dns.consts import TYPE_A
+from learn_dns.consts import TYPE_NS
+from learn_dns.utils import ip_to_string
+
 
 def decode_compressed_name(length, reader):
     pointer_bytes = bytes([length & 0b0011_1111]) + reader.read(1)
@@ -80,7 +84,14 @@ class DNSRecord:
         data = reader.read(10)
         # HHIH means 2-byte int, 2-byte int, 4-byte int, 2-byte int
         type_, class_, ttl, data_len = struct.unpack("!HHIH", data)
-        data = reader.read(data_len)
+
+        if type_ == TYPE_NS:
+            data = decode_name(reader)
+        elif type_ == TYPE_A:
+            data = ip_to_string(reader.read(data_len))
+        else:
+            data = reader.read(data_len)
+
         return DNSRecord(name, type_, class_, ttl, data)
 
 
@@ -91,6 +102,24 @@ class DNSPacket:
     answers: List[DNSRecord]
     authorities: List[DNSRecord]
     additionals: List[DNSRecord]
+
+    def get_answer(self):
+        # return the first A record in the Answer section
+        for x in self.answers:
+            if x.type_ == TYPE_A:
+                return x.data
+
+    def get_nameserver_ip(self):
+        # return the first A record in the Additional section
+        for x in self.additionals:
+            if x.type_ == TYPE_A:
+                return x.data
+
+    def get_nameserver(self):
+        # return the first NS record in the Authority section
+        for x in self.authorities:
+            if x.type_ == TYPE_NS:
+                return x.data.decode("utf-8")
 
     @staticmethod
     def from_bytes(data: bytes):
