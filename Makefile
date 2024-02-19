@@ -17,6 +17,3 @@ lint:
 
 format:
 	poetry run ruff format .
-
-run:
-	poetry run python main.py
